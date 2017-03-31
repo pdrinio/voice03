@@ -2,7 +2,9 @@
 using Windows.Storage;
 using Windows.Media.SpeechRecognition;
 using Windows.UI.Core;
+using Windows.ApplicationModel;
 using Windows.ApplicationModel.Resources.Core;
+using Windows.Globalization;
 
 using System;
 using System.Collections.Generic;
@@ -31,11 +33,45 @@ namespace voice03
         private SpeechRecognizer speechRecognizer;
         private IAsyncOperation<SpeechRecognitionResult> recognitionOperation;
         private CoreDispatcher dispatcher;
-        private ResourceContext
+        private ResourceContext speechContext;
+        private ResourceMap sppechResourceMap;
+        
 
         public MainPage()
         {
             this.InitializeComponent();
+        }
+
+        protected async override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            dispatcher = CoreWindow.GetForCurrentThread().Dispatcher;
+
+            bool tengoPermiso = await AudioCapturePermissions.RequestMicrophonePermission();
+            if (tengoPermiso)
+            {
+                Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
+                await InitializeRecognizer(SpeechRecognizer.SystemSpeechLanguage);
+            } else
+            {
+                resultadosTB.Visibility = Visibility.Visible;
+                resultadosTB.Text = "Sin acceso al micrófono";
+            }
+        }
+
+        private async Task InitializeRecognizer(Language recognizerLanguage)
+        {
+            if (speechRecognizer != null)
+            {
+                speechRecognizer.StateChanged -= SpeechRecognizer_StateChanged;
+            }
+        }
+
+        private async void SpeechRecognizer_StateChanged(SpeechRecognizer sender, SpeechRecognizerStateChangedEventArgs args)
+        {
+            await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+            resultadosTB.Text = "Speech recognizer state: " + args.State.ToString();
+            });
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
