@@ -1,4 +1,10 @@
-﻿using System;
+﻿using System.Threading.Tasks;
+using Windows.Storage;
+using Windows.Media.SpeechRecognition;
+using Windows.UI.Core;
+using Windows.ApplicationModel.Resources.Core;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,9 +28,19 @@ namespace voice03
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        private SpeechRecognizer speechRecognizer;
+        private IAsyncOperation<SpeechRecognitionResult> recognitionOperation;
+        private CoreDispatcher dispatcher;
+        private ResourceContext
+
         public MainPage()
         {
             this.InitializeComponent();
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
