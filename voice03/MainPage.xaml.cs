@@ -99,6 +99,9 @@ namespace voice03
                     //si hubo éxito 
                     resultadosTB.Visibility = Visibility.Visible;
                     resultadosTB.Text = "Gramática compilada, a por ello";
+
+                    speechRecognizer.Timeouts.EndSilenceTimeout = TimeSpan.FromSeconds(1.2);//damos tiempo a hablar
+
                 }
             }
             catch (Exception e)
