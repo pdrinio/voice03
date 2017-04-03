@@ -51,9 +51,35 @@ namespace voice03
             bool tengoPermiso = await AudioCapturePermissions.RequestMicrophonePermission();
             if (tengoPermiso)
             {
-                Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
-                //await InitializeRecognizer(SpeechRecognizer.SystemSpeechLanguage);
-                await InitializeRecognizer(speechLanguage); ;
+                Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;                
+                await InitializeRecognizer(speechLanguage);
+
+                //a reconocer
+                try
+                {
+                    recognitionOperation = speechRecognizer.RecognizeWithUIAsync();
+                    SpeechRecognitionResult speechRecognitionResult = await recognitionOperation;
+                    if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success)
+                    {
+                        HandleRecognitionResult(speechRecognitionResult);
+                    }
+                    else
+                    {
+                        resultadosTB.Visibility = Visibility.Visible;
+                        resultadosTB.Text = string.Format("Error de reconocimiento; estado: {0}", speechRecognitionResult.Status.ToString());
+                    }
+                }
+
+            catch (TaskCanceledException ex)
+                {
+                    System.Diagnostics.Debug.WriteLine("Me cerraron en el medio del reconocimiento");
+                    System.Diagnostics.Debug.WriteLine(ex.ToString());
+                }
+            catch (Exception ex2)
+                {
+                    var msg = new Windows.UI.Popups.MessageDialog(ex2.Message, "Error genérico");
+                    await msg.ShowAsync();
+                }
             } else
             {
                 resultadosTB.Visibility = Visibility.Visible;
@@ -118,6 +144,11 @@ namespace voice03
             {
             resultadosTB.Text = "Estado de reconocimiento de texto: " + args.State.ToString();
             });
+        }
+
+        private void HandleRecognitionResult (SpeechRecognitionResult ecoResult)
+        {
+
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
