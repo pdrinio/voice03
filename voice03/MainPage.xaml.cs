@@ -54,32 +54,34 @@ namespace voice03
                 Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;                
                 await InitializeRecognizer(speechLanguage);
 
-                //a reconocer
-                try
-                {
-                    recognitionOperation = speechRecognizer.RecognizeWithUIAsync();
-                    SpeechRecognitionResult speechRecognitionResult = await recognitionOperation;
-                    if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success)
-                    {
-                        HandleRecognitionResult(speechRecognitionResult);
-                    }
-                    else
-                    {
-                        resultadosTB.Visibility = Visibility.Visible;
-                        resultadosTB.Text = string.Format("Error de reconocimiento; estado: {0}", speechRecognitionResult.Status.ToString());
-                    }
-                }
+                reconocerContinuamente();
+                ////a reconocer
+                //try
+                //{
+                //    recognitionOperation = speechRecognizer.RecognizeWithUIAsync();
+                //    SpeechRecognitionResult speechRecognitionResult = await recognitionOperation;
+                //    if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success)
+                //    {
+                //        HandleRecognitionResult(speechRecognitionResult);
+                //    }
+                //    else
+                //    {
+                //        resultadosTB.Visibility = Visibility.Visible;
+                //        resultadosTB.Text = string.Format("Error de reconocimiento; estado: {0}", speechRecognitionResult.Status.ToString());
+                //    }
+                //}
 
-            catch (TaskCanceledException ex)
-                {
-                    System.Diagnostics.Debug.WriteLine("Me cerraron en el medio del reconocimiento");
-                    System.Diagnostics.Debug.WriteLine(ex.ToString());
-                }
-            catch (Exception ex2)
-                {
-                    var msg = new Windows.UI.Popups.MessageDialog(ex2.Message, "Error genérico");
-                    await msg.ShowAsync();
-                }
+                //catch (TaskCanceledException ex)
+                //{
+                //    System.Diagnostics.Debug.WriteLine("Me cerraron en el medio del reconocimiento");
+                //    System.Diagnostics.Debug.WriteLine(ex.ToString());
+                //}
+                //catch (Exception ex2)
+                //{
+                //    var msg = new Windows.UI.Popups.MessageDialog(ex2.Message, "Error genérico");
+                //    await msg.ShowAsync();
+                //} // hasta aquí a reconocer
+
             } else
             {
                 resultadosTB.Visibility = Visibility.Visible;
@@ -146,14 +148,43 @@ namespace voice03
             });
         }
 
+        private async void reconocerContinuamente()
+        {
+            try
+            {
+                recognitionOperation = speechRecognizer.RecognizeWithUIAsync();
+                SpeechRecognitionResult speechRecognitionResult = await recognitionOperation;
+                if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success)
+                {
+                    HandleRecognitionResult(speechRecognitionResult);
+                }
+                else
+                {
+                    resultadosTB.Visibility = Visibility.Visible;
+                    resultadosTB.Text = string.Format("Error de reconocimiento; estado: {0}", speechRecognitionResult.Status.ToString());
+                }
+            }
+
+            catch (TaskCanceledException ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Me cerraron en el medio del reconocimiento");
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+            }
+            catch (Exception ex2)
+            {
+                var msg = new Windows.UI.Popups.MessageDialog(ex2.Message, "Error genérico");
+                await msg.ShowAsync();
+            }
+        }
+
         private void HandleRecognitionResult (SpeechRecognitionResult ecoResult)
         {
-
+            resultadosTB.Text = ecoResult.Text;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-
+            reconocerContinuamente();
         }
     }
 }
