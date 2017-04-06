@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<grammar xml:lang="es-ES" root="inicio"
+tag-format="semantics/1.0" version="1.0"
+xmlns="http://www.w3.org/2001/06/grammar">
+
+    <!-- The following three rules recognize phrases where a user describes what color an -->
+    <!-- individual property should be. For example "blue background" or "green circle". -->
+
+  <rule id="inicio">
+    <one-of>
+      <item>
+        <ruleref uri="#queHoraEs"></ruleref>
+        <tag> out.consulta=rules.latest(); </tag>
+      </item>
+      <item>
+        <ruleref uri="#queDiaEsHoy"></ruleref>
+        <tag> out.consulta=rules.latest(); </tag>
+      </item>
+    </one-of>
+  </rule>
+
+  <rule id="queHoraEs">
+    <one-of>
+      <item>
+        <tag> out="QUE_HORA"; </tag>
+        <one-of>
+          <item>¿Qué hora es?</item>
+          <item>¿En qué hora estamos?</item>
+          <item>¿Me dices la hora?</item>
+        </one-of>
+      </item>
+    </one-of>
+  </rule>
+
+  <rule id="queDiaEsHoy">
+    <one-of>
+      <item>
+        <tag> out="QUE_DIA"; </tag>
+        <one-of>
+          <item>¿Qué día es?</item>
+          <item>¿Qué día es hoy?</item>
+          <item>¿En qué día estamos?</item>
+        </one-of>
+      </item>
+    </one-of>
+  </rule>
+
+</grammar>

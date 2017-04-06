@@ -55,37 +55,11 @@ namespace voice03
                 await InitializeRecognizer(speechLanguage);
 
                 reconocerContinuamente();
-                ////a reconocer
-                //try
-                //{
-                //    recognitionOperation = speechRecognizer.RecognizeWithUIAsync();
-                //    SpeechRecognitionResult speechRecognitionResult = await recognitionOperation;
-                //    if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success)
-                //    {
-                //        HandleRecognitionResult(speechRecognitionResult);
-                //    }
-                //    else
-                //    {
-                //        resultadosTB.Visibility = Visibility.Visible;
-                //        resultadosTB.Text = string.Format("Error de reconocimiento; estado: {0}", speechRecognitionResult.Status.ToString());
-                //    }
-                //}
-
-                //catch (TaskCanceledException ex)
-                //{
-                //    System.Diagnostics.Debug.WriteLine("Me cerraron en el medio del reconocimiento");
-                //    System.Diagnostics.Debug.WriteLine(ex.ToString());
-                //}
-                //catch (Exception ex2)
-                //{
-                //    var msg = new Windows.UI.Popups.MessageDialog(ex2.Message, "Error genérico");
-                //    await msg.ShowAsync();
-                //} // hasta aquí a reconocer
-
+               
             } else
             {
-                resultadosTB.Visibility = Visibility.Visible;
-                resultadosTB.Text = "Sin acceso al micrófono";
+                tbEstadoReconocimiento.Visibility = Visibility.Visible;
+                tbEstadoReconocimiento.Text = "Sin acceso al micrófono";
             }
         }
 
@@ -102,7 +76,7 @@ namespace voice03
             try
             {
                 //cargar el fichero de la grmática
-                string fileName = String.Format("SRGS\\SRGSColors.xml");
+                string fileName = String.Format("SRGS\\SRGSComandos.xml");
                 StorageFile grammaContentFile = await Package.Current.InstalledLocation.GetFileAsync(fileName);
 
                 //inicializamos el objeto reconocedor           
@@ -119,14 +93,14 @@ namespace voice03
                 //si no hubo éxito...
                 if (compilationResult.Status != SpeechRecognitionResultStatus.Success)
                 {
-                    resultadosTB.Visibility = Visibility.Visible;
-                    resultadosTB.Text = "Error compilando la gramática";
+                    tbEstadoReconocimiento.Visibility = Visibility.Visible;
+                    tbEstadoReconocimiento.Text = "Error compilando la gramática";
                 }
                 else
                 {
                     //si hubo éxito 
-                    resultadosTB.Visibility = Visibility.Visible;
-                    resultadosTB.Text = "Gramática compilada, a por ello";
+                    tbEstadoReconocimiento.Visibility = Visibility.Visible;
+                    tbEstadoReconocimiento.Text = "Gramática compilada, reconociendo";
 
                     speechRecognizer.Timeouts.EndSilenceTimeout = TimeSpan.FromSeconds(1.2);//damos tiempo a hablar
 
@@ -144,7 +118,7 @@ namespace voice03
         {//feedback al usuario del estado del reconocimiento de texto
             await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-            resultadosTB.Text = "Estado de reconocimiento de texto: " + args.State.ToString();
+                tbEstadoReconocimiento.Text = "Estado de reconocimiento de texto: " + args.State.ToString();
             });
         }
 
@@ -152,7 +126,8 @@ namespace voice03
         {
             try
             {
-                recognitionOperation = speechRecognizer.RecognizeWithUIAsync();
+                //recognitionOperation = speechRecognizer.RecognizeWithUIAsync(); pasamos el feedback que da....
+                recognitionOperation = speechRecognizer.RecognizeAsync(); //y utilizamos éste, que no muestra el pop-up
                 SpeechRecognitionResult speechRecognitionResult = await recognitionOperation;
                 if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success)
                 {
@@ -160,8 +135,8 @@ namespace voice03
                 }
                 else
                 {
-                    resultadosTB.Visibility = Visibility.Visible;
-                    resultadosTB.Text = string.Format("Error de reconocimiento; estado: {0}", speechRecognitionResult.Status.ToString());
+                    tbEstadoReconocimiento.Visibility = Visibility.Visible;
+                    tbEstadoReconocimiento.Text = string.Format("Error de reconocimiento; estado: {0}", speechRecognitionResult.Status.ToString());
                 }
             }
 
@@ -179,11 +154,12 @@ namespace voice03
 
         private void HandleRecognitionResult (SpeechRecognitionResult ecoResult)
         {
-            resultadosTB.Text = ecoResult.Text;
+            tbTextoReconocido.Text = ecoResult.Text; //presentamos el resultado
+            reconocerContinuamente(); //y volvemos a invocar el reconocimiento
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
-        {
+        {   //TODO: lanzar el reconocimiento manualmente, una vez concluya el automático; A DESAPARECER
             reconocerContinuamente();
         }
     }
