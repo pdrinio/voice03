@@ -155,7 +155,25 @@ namespace voice03
         private void HandleRecognitionResult (SpeechRecognitionResult ecoResult)
         {
             tbTextoReconocido.Text = ecoResult.Text; //presentamos el resultado
-            reconocerContinuamente(); //y volvemos a invocar el reconocimiento
+            
+            //lo interpretamos
+            if (ecoResult.SemanticInterpretation.Properties.ContainsKey("QUE_HORA")) {
+                tbDiccionario.Text = ecoResult.SemanticInterpretation.Properties["QUE_HORA"][0].ToString();
+            }
+            if (ecoResult.SemanticInterpretation.Properties.ContainsKey("QUE_DIA"))
+            {
+                tbDiccionario.Text = ecoResult.SemanticInterpretation.Properties["QUE_DIA"][0].ToString();
+            }
+            if (ecoResult.SemanticInterpretation.Properties.ContainsKey("consulta"))
+            {
+                tbDiccionario.Text = ecoResult.SemanticInterpretation.Properties["consulta"][0].ToString();
+            }
+
+                       
+
+            // anulamos el objeto de resultado para que no vuelva a entrar en el bucle, e invocamos el reconocimiento de nuevo
+            ecoResult = null;
+            reconocerContinuamente(); 
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

@@ -4,8 +4,6 @@
 tag-format="semantics/1.0" version="1.0"
 xmlns="http://www.w3.org/2001/06/grammar">
 
-    <!-- The following three rules recognize phrases where a user describes what color an -->
-    <!-- individual property should be. For example "blue background" or "green circle". -->
 
   <rule id="inicio">
     <one-of>
