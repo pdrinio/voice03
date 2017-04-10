@@ -5,6 +5,8 @@ using Windows.UI.Core;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Resources.Core;
 using Windows.Globalization;
+using Windows.Media.SpeechSynthesis;
+
 
 using System;
 using System.Collections.Generic;
@@ -34,9 +36,8 @@ namespace voice03
         private SpeechRecognizer speechRecognizer;
         private IAsyncOperation<SpeechRecognitionResult> recognitionOperation;
         private CoreDispatcher dispatcher;
-        private ResourceContext speechContext;
-        private ResourceMap sppechResourceMap;
-        
+        private SpeechSynthesizer synthesizer;
+
 
         public MainPage()
         {
@@ -51,11 +52,15 @@ namespace voice03
             bool tengoPermiso = await AudioCapturePermissions.RequestMicrophonePermission();
             if (tengoPermiso)
             {
+                // lanza el habla 
+                inicializaHabla();
+
+                // y lanza el reconocimiento contínuo 
                 Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;                
                 await InitializeRecognizer(speechLanguage);
 
                 reconocerContinuamente();
-               
+
             } else
             {
                 tbEstadoReconocimiento.Visibility = Visibility.Visible;
@@ -64,7 +69,7 @@ namespace voice03
         }
 
         private async Task InitializeRecognizer(Language recognizerLanguage)
-        {   //inicialiación del reconocedor
+        {   //inicialiación del reconocedor y del habla
             if (speechRecognizer != null)
             {
                 speechRecognizer.StateChanged -= SpeechRecognizer_StateChanged;
@@ -75,7 +80,7 @@ namespace voice03
 
             try
             {
-                //cargar el fichero de la grmática
+                //cargar el fichero de la gramática
                 string fileName = String.Format("SRGS\\SRGSComandos.xml");
                 StorageFile grammaContentFile = await Package.Current.InstalledLocation.GetFileAsync(fileName);
 
@@ -131,7 +136,7 @@ namespace voice03
                 SpeechRecognitionResult speechRecognitionResult = await recognitionOperation;
                 if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success)
                 {
-                    HandleRecognitionResult(speechRecognitionResult);
+                    await interpretaResultado(speechRecognitionResult);
                 }
                 else
                 {
@@ -152,35 +157,69 @@ namespace voice03
             }
         }
 
-        private void HandleRecognitionResult (SpeechRecognitionResult ecoResult)
+        private async Task interpretaResultado (SpeechRecognitionResult recoResult)
         {
-            if (ecoResult.Text.ToString() != "") //si reconoce algo con texto, sea cual sea
+            if (recoResult.Text.ToString() != "") //si reconoce algo con texto, sea cual sea
             {
-                tbTextoReconocido.Text = ecoResult.Text; //presentamos el resultado
+                tbTextoReconocido.Text = recoResult.Text; //presentamos el resultado
 
                 //lo interpretamos
-                if (ecoResult.SemanticInterpretation.Properties.ContainsKey("QUE_HORA"))
+                if (recoResult.SemanticInterpretation.Properties.ContainsKey("QUE_HORA"))
                 {
-                    tbDiccionario.Text = ecoResult.SemanticInterpretation.Properties["QUE_HORA"][0].ToString();
+                    tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["QUE_HORA"][0].ToString();
                 }
-                if (ecoResult.SemanticInterpretation.Properties.ContainsKey("QUE_DIA"))
+                if (recoResult.SemanticInterpretation.Properties.ContainsKey("QUE_DIA"))
                 {
-                    tbDiccionario.Text = ecoResult.SemanticInterpretation.Properties["QUE_DIA"][0].ToString();
+                    tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["QUE_DIA"][0].ToString();
                 }
-                if (ecoResult.SemanticInterpretation.Properties.ContainsKey("consulta"))
+                if (recoResult.SemanticInterpretation.Properties.ContainsKey("consulta"))
                 {
-                    tbDiccionario.Text = ecoResult.SemanticInterpretation.Properties["consulta"][0].ToString();
+                    tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["consulta"][0].ToString();
+                    await dime("Tu consulta ha sido: " + recoResult.Text);
                 }
 
 
                 // anulamos el objeto de resultado para que no vuelva a entrar en el bucle, e invocamos el reconocimiento de nuevo
-                ecoResult = null;
+                recoResult = null;
                 reconocerContinuamente();
             }
             else { //si no devuelve texto, probablemente hubiera un silencio; volvemos a invocar
                 reconocerContinuamente();
             }
                         
+        }
+
+        private void inicializaHabla()
+        {
+            //lanza el habla
+            synthesizer = new SpeechSynthesizer();
+
+            VoiceInformation voiceInfo =
+         (
+           from voice in SpeechSynthesizer.AllVoices
+           where voice.Gender == VoiceGender.Female
+           select voice
+         ).FirstOrDefault() ?? SpeechSynthesizer.DefaultVoice;
+
+            synthesizer.Voice = voiceInfo;
+        }
+
+        private async Task dime(String szTexto)
+        {
+            try
+            {
+                // crear el flujo desde el texto
+                SpeechSynthesisStream synthesisStream = await synthesizer.SynthesizeTextToStreamAsync(szTexto);
+
+                // ...y lo dice
+                media.AutoPlay = true;
+                media.SetSource(synthesisStream, synthesisStream.ContentType);
+                media.Play();
+            }
+            catch (Exception e) {
+                var msg = new Windows.UI.Popups.MessageDialog(e.Message, "Error hablando:");
+                await msg.ShowAsync();
+            }
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
