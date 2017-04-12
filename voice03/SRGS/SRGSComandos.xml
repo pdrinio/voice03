@@ -15,13 +15,17 @@ xmlns="http://www.w3.org/2001/06/grammar">
         <ruleref uri="#queDiaEsHoy"></ruleref>
         <tag> out.consulta=rules.latest(); </tag>
       </item>
+      <item>
+        <ruleref uri="#crearBulto"></ruleref>
+        <tag>out.orden = rules.latest();</tag>
+      </item>
     </one-of>
   </rule>
 
   <rule id="queHoraEs">
     <one-of>
       <item>
-        <tag> out="QUE_HORA"; </tag>
+        <tag> out="HORA"; </tag>
         <one-of>
           <item>¿Qué hora es?</item>
           <item>¿En qué hora estamos?</item>
@@ -34,7 +38,7 @@ xmlns="http://www.w3.org/2001/06/grammar">
   <rule id="queDiaEsHoy">
     <one-of>
       <item>
-        <tag> out="QUE_DIA"; </tag>
+        <tag> out="DIA"; </tag>
         <one-of>
           <item>¿Qué día es?</item>
           <item>¿Qué día es hoy?</item>
@@ -43,5 +47,18 @@ xmlns="http://www.w3.org/2001/06/grammar">
       </item>
     </one-of>
   </rule>
-
+  
+  <rule id="crearBulto">
+    <one-of>
+      <item>
+        <tag> out="CREAR BULTO"; </tag>
+        <one-of>
+          <item>Crear bulto</item>
+          <item>Hacer bulto</item>
+          <item>Nuevo bulto</item>
+          <item>Bulto nuevo</item>
+        </one-of>
+      </item>
+    </one-of>
+  </rule>
 </grammar>

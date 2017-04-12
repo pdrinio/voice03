@@ -12,6 +12,9 @@
         <TextBlock x:Name="tbEstadoReconocimiento" HorizontalAlignment="Left" Height="40" Margin="10,163,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="271"/>
         <TextBlock x:Name="tbTextoReconocido" HorizontalAlignment="Left" Height="40" Margin="10,232,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="271"/>
         <TextBlock x:Name="tbDiccionario" HorizontalAlignment="Left" Height="40" Margin="10,298,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="271"/>
+        <TextBlock x:Name="tbConfianza" HorizontalAlignment="Left" Height="40" Margin="10,358,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="271"/>
         <MediaElement x:Name="media" AutoPlay="False" />
+        <TextBox x:Name="tbxConsola"  HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Margin="30,420,0,0" Width="320" Height="120"/>
+
     </Grid>
 </Page>

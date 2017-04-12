@@ -6,7 +6,7 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Resources.Core;
 using Windows.Globalization;
 using Windows.Media.SpeechSynthesis;
-
+using System.Diagnostics;
 
 using System;
 using System.Collections.Generic;
@@ -37,7 +37,7 @@ namespace voice03
         private IAsyncOperation<SpeechRecognitionResult> recognitionOperation;
         private CoreDispatcher dispatcher;
         private SpeechSynthesizer synthesizer;
-
+        private SpeechRecognitionResult speechRecognitionResult; 
 
         public MainPage()
         {
@@ -123,20 +123,33 @@ namespace voice03
         {//feedback al usuario del estado del reconocimiento de texto
             await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                tbEstadoReconocimiento.Text = "Estado de reconocimiento de texto: " + args.State.ToString();
+                tbEstadoReconocimiento.Text = "Estado de reconocimiento de texto: " + args.State.ToString();                
+                tbxConsola.Text += args.State.ToString() + Environment.NewLine;
+                
             });
+            
         }
 
-        private async void reconocerContinuamente()
+        public async void reconocerContinuamente()
         {
             try
             {
                 //recognitionOperation = speechRecognizer.RecognizeWithUIAsync(); pasamos el feedback que da....
                 recognitionOperation = speechRecognizer.RecognizeAsync(); //y utilizamos éste, que no muestra el pop-up
-                SpeechRecognitionResult speechRecognitionResult = await recognitionOperation;
-                if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success)
+                                                                          // SpeechRecognitionResult speechRecognitionResult = await recognitionOperation;
+                speechRecognitionResult = await recognitionOperation;
+                if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success) //ha recibido una frase
                 {
-                    await interpretaResultado(speechRecognitionResult);
+                    if (speechRecognitionResult.Confidence == SpeechRecognitionConfidence.Rejected && speechRecognitionResult.Text != "") //...pero no la ha entendido
+                    {
+                        await dime("No te he entendido");
+                        limpiaFormulario();
+                        reconocerContinuamente();
+                    }
+                    else //en caso de que si la hubiera entendido
+                    {
+                        await interpretaResultado(speechRecognitionResult);
+                    }
                 }
                 else
                 {
@@ -159,25 +172,32 @@ namespace voice03
 
         private async Task interpretaResultado (SpeechRecognitionResult recoResult)
         {
+            limpiaFormulario(); // limpiamos del formulario la intepretación anterior;
+
             if (recoResult.Text.ToString() != "") //si reconoce algo con texto, sea cual sea
             {
-                tbTextoReconocido.Text = recoResult.Text; //presentamos el resultado
+                if (recoResult.Status != SpeechRecognitionResultStatus.Success)
+                {
+                    await dime("Creo que no te he entendido bien");        
+                }
+                else
+                {
+                    tbTextoReconocido.Text = recoResult.Text; //presentamos el resultado
+                    tbConfianza.Text = recoResult.RawConfidence.ToString(); //presentamos la confianza
 
-                //lo interpretamos
-                if (recoResult.SemanticInterpretation.Properties.ContainsKey("QUE_HORA"))
-                {
-                    tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["QUE_HORA"][0].ToString();
-                }
-                if (recoResult.SemanticInterpretation.Properties.ContainsKey("QUE_DIA"))
-                {
-                    tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["QUE_DIA"][0].ToString();
-                }
-                if (recoResult.SemanticInterpretation.Properties.ContainsKey("consulta"))
-                {
-                    tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["consulta"][0].ToString();
-                    await dime("Tu consulta ha sido: " + recoResult.Text);
-                }
+                    //lo interpretamos
+                    if (recoResult.SemanticInterpretation.Properties.ContainsKey("consulta"))
+                    {
+                        tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["consulta"][0].ToString();
+                        await dime("Tu consulta ha sido: " + recoResult.Text);
+                    }
+                    if (recoResult.SemanticInterpretation.Properties.ContainsKey("orden"))
+                    {
+                        tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["orden"][0].ToString();
+                        await dime("Tu orden ha sido: " + recoResult.Text);
+                    }
 
+                }
 
                 // anulamos el objeto de resultado para que no vuelva a entrar en el bucle, e invocamos el reconocimiento de nuevo
                 recoResult = null;
@@ -187,6 +207,13 @@ namespace voice03
                 reconocerContinuamente();
             }
                         
+        }
+
+        private void limpiaFormulario()
+        {
+            this.tbDiccionario.Text = "";
+            this.tbTextoReconocido.Text = "";
+            this.tbConfianza.Text = "";
         }
 
         private void inicializaHabla()
