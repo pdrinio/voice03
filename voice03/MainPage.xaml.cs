@@ -69,7 +69,7 @@ namespace voice03
         }
 
         private async Task InitializeRecognizer(Language recognizerLanguage)
-        {   //inicialiación del reconocedor y del habla
+        {   //inicialiación del reconocedor 
             if (speechRecognizer != null)
             {
                 speechRecognizer.StateChanged -= SpeechRecognizer_StateChanged;
@@ -105,7 +105,7 @@ namespace voice03
                 {
                     //si hubo éxito 
                     tbEstadoReconocimiento.Visibility = Visibility.Visible;
-                    tbEstadoReconocimiento.Text = "Gramática compilada, reconociendo";
+                    tbEstadoReconocimiento.Text = "Gramática compilada, reconociendo";                   
 
                     speechRecognizer.Timeouts.EndSilenceTimeout = TimeSpan.FromSeconds(1.2);//damos tiempo a hablar
 
@@ -127,18 +127,20 @@ namespace voice03
                 tbxConsola.Text += args.State.ToString() + Environment.NewLine;
                 
             });
-            
+                      
         }
+
+       
+
 
         public async void reconocerContinuamente()
         {
             try
-            {
-                //recognitionOperation = speechRecognizer.RecognizeWithUIAsync(); pasamos el feedback que da....
+            {              
                 recognitionOperation = speechRecognizer.RecognizeAsync(); //y utilizamos éste, que no muestra el pop-up
-                                                                          // SpeechRecognitionResult speechRecognitionResult = await recognitionOperation;
+                                                                        
                 speechRecognitionResult = await recognitionOperation;
-                if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success) //ha recibido una frase
+                if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success) //hay match entre lo reconocido y la gramática
                 {
                     if (speechRecognitionResult.Confidence == SpeechRecognitionConfidence.Rejected && speechRecognitionResult.Text != "") //...pero no la ha entendido
                     {
@@ -214,6 +216,8 @@ namespace voice03
             this.tbDiccionario.Text = "";
             this.tbTextoReconocido.Text = "";
             this.tbConfianza.Text = "";
+            tbxConsola.SelectAll();
+            tbxConsola.SelectedText = "";
         }
 
         private void inicializaHabla()
