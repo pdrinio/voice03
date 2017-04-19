@@ -140,20 +140,22 @@ namespace voice03
                 recognitionOperation = speechRecognizer.RecognizeAsync(); //y utilizamos éste, que no muestra el pop-up
                                                                         
                 speechRecognitionResult = await recognitionOperation;
-                if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success) //hay match entre lo reconocido y la gramática
+
+                if (speechRecognitionResult.RawConfidence < 0.5 && speechRecognitionResult.Text != "") //si no ha entendido, pero ha escuchado algo
                 {
-                    if (speechRecognitionResult.Confidence == SpeechRecognitionConfidence.Rejected && speechRecognitionResult.Text != "") //...pero no la ha entendido
-                    {
-                        await dime("No te he entendido");
-                        limpiaFormulario();
-                        reconocerContinuamente();
-                    }
-                    else //en caso de que si la hubiera entendido
-                    {
-                        await interpretaResultado(speechRecognitionResult);
-                    }
+                    await dime("Creo que no te he entendido");
+                    limpiaFormulario();
+                    reconocerContinuamente();
                 }
-                else
+                 
+                else 
+
+                if (speechRecognitionResult.Status == SpeechRecognitionResultStatus.Success) //si por el contrario hay match entre gramática y lo escuchado
+                {   
+                        await interpretaResultado(speechRecognitionResult);
+                 
+                }
+                else //si no ha escuchado nada
                 {
                     tbEstadoReconocimiento.Visibility = Visibility.Visible;
                     tbEstadoReconocimiento.Text = string.Format("Error de reconocimiento; estado: {0}", speechRecognitionResult.Status.ToString());
