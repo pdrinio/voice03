@@ -125,12 +125,15 @@ namespace voice03
             {
                 tbEstadoReconocimiento.Text = "Estado de reconocimiento de texto: " + args.State.ToString();                
                 tbxConsola.Text += args.State.ToString() + Environment.NewLine;
-                
             });
-                      
-        }
 
-       
+                if (args.State == SpeechRecognizerState.SoundEnded)
+                {
+                
+                    //TODO: mostrar las palabras escuchadas    
+                }
+        
+        }       
 
 
         public async void reconocerContinuamente()
@@ -143,7 +146,7 @@ namespace voice03
 
                 if (speechRecognitionResult.RawConfidence < 0.5 && speechRecognitionResult.Text != "") //si no ha entendido, pero ha escuchado algo
                 {
-                    await dime("Creo que no te he entendido");
+                    await dime("Creo que no te he entendido");                    
                     limpiaFormulario();
                     reconocerContinuamente();
                 }
@@ -193,7 +196,11 @@ namespace voice03
                     if (recoResult.SemanticInterpretation.Properties.ContainsKey("consulta"))
                     {
                         tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["consulta"][0].ToString();
-                        await dime("Tu consulta ha sido: " + recoResult.Text);
+                        if (recoResult.SemanticInterpretation.Properties["consulta"][0].ToString() == "HORA")
+                        {
+                            await dime(DecideQueHacer("HORA"));
+                        }
+                        //await dime("Tu consulta ha sido: " + recoResult.Text);
                     }
                     if (recoResult.SemanticInterpretation.Properties.ContainsKey("orden"))
                     {
@@ -253,6 +260,15 @@ namespace voice03
                 var msg = new Windows.UI.Popups.MessageDialog(e.Message, "Error hablando:");
                 await msg.ShowAsync();
             }
+        }
+
+        private string DecideQueHacer(string szMensaje)
+        {
+            if (szMensaje == "HORA")
+            {
+                return DateTime.Now.ToString("h:mm");
+            }
+            else return "No sé gestionar tu mensaje";
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
