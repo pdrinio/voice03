@@ -16,7 +16,7 @@ xmlns="http://www.w3.org/2001/06/grammar">
         <tag> out.consulta=rules.latest(); </tag>
       </item>
       <item>
-        <ruleref uri="#crearBulto"></ruleref>
+        <ruleref uri="#tomaNota"></ruleref>
         <tag>out.orden = rules.latest();</tag>
       </item>
     </one-of>
@@ -30,6 +30,7 @@ xmlns="http://www.w3.org/2001/06/grammar">
           <item>¿Qué hora es?</item>
           <item>¿En qué hora estamos?</item>
           <item>¿Me dices la hora?</item>
+          <item>¿Me dices qué hora es?</item>
         </one-of>
       </item>
     </one-of>
@@ -43,20 +44,22 @@ xmlns="http://www.w3.org/2001/06/grammar">
           <item>¿Qué día es?</item>
           <item>¿Qué día es hoy?</item>
           <item>¿En qué día estamos?</item>
+          <item>¿Me dices qué día es?</item>
         </one-of>
       </item>
     </one-of>
   </rule>
   
-  <rule id="crearBulto">
+  <rule id="tomaNota">
     <one-of>
       <item>
-        <tag> out="CREAR BULTO"; </tag>
+        <tag> out="TOMANOTA"; </tag>
         <one-of>
-          <item>Crear bulto</item>
-          <item>Hacer bulto</item>
-          <item>Nuevo bulto</item>
-          <item>Bulto nuevo</item>
+          <item>Toma nota</item>
+          <item>Anota</item>
+          <item>Nota nueva</item>
+          <item>Crear nueva nota</item>
+          <item>Crear nota nueva</item>
         </one-of>
       </item>
     </one-of>

@@ -195,17 +195,13 @@ namespace voice03
                     //lo interpretamos
                     if (recoResult.SemanticInterpretation.Properties.ContainsKey("consulta"))
                     {
-                        tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["consulta"][0].ToString();
-                        if (recoResult.SemanticInterpretation.Properties["consulta"][0].ToString() == "HORA")
-                        {
-                            await dime(DecideQueHacer("HORA"));
-                        }
-                        //await dime("Tu consulta ha sido: " + recoResult.Text);
+                        tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["consulta"][0].ToString();                    
+                        await dime(RespondeALaComunicacion(recoResult.SemanticInterpretation.Properties["consulta"][0].ToString()));             
                     }
                     if (recoResult.SemanticInterpretation.Properties.ContainsKey("orden"))
                     {
                         tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["orden"][0].ToString();
-                        await dime("Tu orden ha sido: " + recoResult.Text);
+                        await dime(RespondeALaComunicacion(recoResult.SemanticInterpretation.Properties["orden"][0].ToString()));
                     }
 
                 }
@@ -262,13 +258,19 @@ namespace voice03
             }
         }
 
-        private string DecideQueHacer(string szMensaje)
+        private string RespondeALaComunicacion(string szMensaje)
         {
-            if (szMensaje == "HORA")
+            switch (szMensaje)
             {
-                return DateTime.Now.ToString("h:mm");
+                case "HORA":
+                    return DateTime.Now.ToString("h:mm");
+                case "DIA":
+                    return DateTime.Now.ToString("dd") + " de " + DateTime.Now.ToString("MMMM");
+                case "TOMANOTA":
+                    return "Vamos a tonar nota";
+                default:
+                    return "No sé gestionar tu mensaje";                    
             }
-            else return "No sé gestionar tu mensaje";
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
