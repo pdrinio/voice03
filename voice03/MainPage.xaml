@@ -5,16 +5,17 @@
     xmlns:local="using:voice03"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d" Width="590">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Button Content="Inicio" HorizontalAlignment="Left" Height="56" Margin="70,70,0,0" VerticalAlignment="Top" Width="211" Click="Button_Click"/>
+        <Button Content="Inicio reconocimiento" HorizontalAlignment="Left" Height="56" Margin="70,70,0,0" VerticalAlignment="Top" Width="211" Click="Button_Click"/>
         <TextBlock x:Name="tbEstadoReconocimiento" HorizontalAlignment="Left" Height="40" Margin="10,163,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="271"/>
         <TextBlock x:Name="tbTextoReconocido" HorizontalAlignment="Left" Height="40" Margin="10,232,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="271"/>
         <TextBlock x:Name="tbDiccionario" HorizontalAlignment="Left" Height="40" Margin="10,298,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="271"/>
         <TextBlock x:Name="tbConfianza" HorizontalAlignment="Left" Height="40" Margin="10,358,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="271"/>
         <MediaElement x:Name="media" AutoPlay="False" />
         <TextBox x:Name="tbxConsola"  HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Margin="30,420,0,0" Width="320" Height="120" />
+        <Button x:Name="btnRecoLibre" Content="Reconocimiento libre" HorizontalAlignment="Left" Height="56" Margin="316,70,0,0" VerticalAlignment="Top" Width="211" Click="BtnRecoLibre_Click"/>
 
     </Grid>
 </Page>

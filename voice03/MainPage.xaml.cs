@@ -7,6 +7,7 @@ using Windows.ApplicationModel.Resources.Core;
 using Windows.Globalization;
 using Windows.Media.SpeechSynthesis;
 using System.Diagnostics;
+using System.Text;
 
 using System;
 using System.Collections.Generic;
@@ -38,6 +39,8 @@ namespace voice03
         private CoreDispatcher dispatcher;
         private SpeechSynthesizer synthesizer;
         private SpeechRecognitionResult speechRecognitionResult; 
+        private Boolean bolTomandoNota; //para saber si está tomando nota
+        private StringBuilder szTextoDictado; //el texto que recoges
 
         public MainPage()
         {
@@ -46,6 +49,7 @@ namespace voice03
 
         protected async override void OnNavigatedTo(NavigationEventArgs e) //cuando llegas
         {
+            bolTomandoNota = false; //iniciamos sin el reconocedor continuo
             dispatcher = CoreWindow.GetForCurrentThread().Dispatcher;
 
             //comprobación de si tengo permiso sobre el micrófono; si tengo, inicio el proceso (InitializeRecognizer)
@@ -119,6 +123,40 @@ namespace voice03
 
         }
 
+        private async Task InitializeTomaNota (Language recognizerLanguage)
+        {
+            if (speechRecognizer != null)
+            {
+                //si vengo de una ejecución anterior, hacemos limpieza
+                speechRecognizer.StateChanged -= SpeechRecognizer_StateChanged;
+                speechRecognizer.ContinuousRecognitionSession.Completed -= ContinuousRecognitionSession_Completed;
+                speechRecognizer.ContinuousRecognitionSession.ResultGenerated -= ContinuousRecognitionSession_ResultGenerated;
+                speechRecognizer.HypothesisGenerated -= SpeechRecognizer_HypothesisGenerated;
+
+                this.speechRecognizer.Dispose();
+                this.speechRecognizer = null;
+            }
+
+            this.speechRecognizer = new SpeechRecognizer(recognizerLanguage);
+
+            speechRecognizer.StateChanged += SpeechRecognizer_StateChanged; //feedback al usuario
+
+            // en vez de gramática, aplicamos el caso de uso "Dictado"
+            var dictationConstraint = new SpeechRecognitionTopicConstraint(SpeechRecognitionScenario.Dictation, "dictation");
+            speechRecognizer.Constraints.Add(dictationConstraint);
+            SpeechRecognitionCompilationResult result = await speechRecognizer.CompileConstraintsAsync();
+            if (result.Status != SpeechRecognitionResultStatus.Success)
+            {                
+                var messageDialog = new Windows.UI.Popups.MessageDialog(result.Status.ToString(), "Excepción chunga: ");
+                await messageDialog.ShowAsync();
+            }
+
+            // nos registramos a los eventos
+            speechRecognizer.ContinuousRecognitionSession.Completed += ContinuousRecognitionSession_Completed; //no hubo éxito
+            speechRecognizer.ContinuousRecognitionSession.ResultGenerated += ContinuousRecognitionSession_ResultGenerated; //o entendió, o llegó basura
+            speechRecognizer.HypothesisGenerated += SpeechRecognizer_HypothesisGenerated; //se va alimentando de lo que va llegando para dar feedback
+        }
+
         private async void SpeechRecognizer_StateChanged(SpeechRecognizer sender, SpeechRecognizerStateChangedEventArgs args)
         {//feedback al usuario del estado del reconocimiento de texto
             await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
@@ -131,8 +169,7 @@ namespace voice03
                 {
                 
                     //TODO: mostrar las palabras escuchadas    
-                }
-        
+                }        
         }       
 
 
@@ -273,9 +310,65 @@ namespace voice03
             }
         }
 
+
+        private async void TomaNota()
+        {
+            szTextoDictado = new StringBuilder();
+            Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
+            try
+            {
+                await InitializeTomaNota(speechLanguage);
+            }
+            catch (Exception exception)
+            {
+                var messageDialog = new Windows.UI.Popups.MessageDialog(exception.Message, "Error inicializando Toma Nota");
+                await messageDialog.ShowAsync();
+            }
+           
+        }
+
+        private async void ContinuousRecognitionSession_Completed(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionCompletedEventArgs args)
+        {
+            if (args.Status != SpeechRecognitionResultStatus.Success)
+            {
+                // durante 20 segundos, ha estado callado...                
+                if (args.Status == SpeechRecognitionResultStatus.TimeoutExceeded)
+                {
+                    await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        this.tbEstadoReconocimiento.Text = "Te has pasado de tiempo";                        
+                        this.btnRecoLibre.Content = "Reconocimiento libre";
+                        bolTomandoNota = false;
+                    });
+                }
+                else
+                {
+                    await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        this.tbEstadoReconocimiento.Text = "Reconocimiento exitoso";
+                        this.tbxConsola.Text = args.Status.ToString();                        
+                        this.btnRecoLibre.Content = "Reconocimiento libre";
+                        bolTomandoNota = false;
+                    });
+                }
+            }
+        }
+
         private void Button_Click(object sender, RoutedEventArgs e)
         {   //TODO: lanzar el reconocimiento manualmente, una vez concluya el automático; A DESAPARECER
             reconocerContinuamente();
+        }
+
+        private void BtnRecoLibre_Click(object sender, RoutedEvent e)
+        {
+            if (bolTomandoNota == true)
+            {
+                //ya viene de vuelta, y quiere parar el reconocimiento
+            }
+            else
+            {
+                TomaNota();
+            }
         }
     }
 }
