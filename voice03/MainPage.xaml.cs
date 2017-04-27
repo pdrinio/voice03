@@ -59,11 +59,11 @@ namespace voice03
                 // lanza el habla 
                 inicializaHabla();
 
-                // y lanza el reconocimiento contínuo 
-                Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;                
-                await InitializeRecognizer(speechLanguage);
+                //// y lanza el reconocimiento contínuo 
+                //Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;                
+                //await InitializeRecognizer(speechLanguage);
 
-                reconocerContinuamente();
+                //reconocerContinuamente();
 
             } else
             {
@@ -166,10 +166,9 @@ namespace voice03
             });
 
                 if (args.State == SpeechRecognizerState.SoundEnded)
-                {
-                
-                    //TODO: mostrar las palabras escuchadas    
-                }        
+                {                
+                //TODO: mostrar las palabras escuchadas    
+            }        
         }       
 
 
@@ -354,21 +353,66 @@ namespace voice03
             }
         }
 
+        private async void ContinuousRecognitionSession_ResultGenerated(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionResultGeneratedEventArgs args)
+        { //se han generado resultados, y si la confianza es buena, los presento
+            // Caso de que la confianza es buena en lo que ha entendido            
+            if (args.Result.Confidence == SpeechRecognitionConfidence.Medium ||
+                args.Result.Confidence == SpeechRecognitionConfidence.High)
+            {
+                szTextoDictado.Append(args.Result.Text + " ");
+
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {                    
+                    tbTextoReconocido.Text = szTextoDictado.ToString();                    
+                });
+            }
+            else
+            {
+               //caso de que la confianza en lo identificado sea baja
+                await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    tbTextoReconocido.Text = szTextoDictado.ToString();
+                    string discardedText = args.Result.Text;
+                    if (!string.IsNullOrEmpty(discardedText))
+                    {
+                        discardedText = discardedText.Length <= 25 ? discardedText : (discardedText.Substring(0, 25) + "...");
+
+                        this.tbxConsola.Text = "Descartado por baja confianza: " + discardedText;                        
+                    }
+                });
+            }
+        }
+
+        private async void SpeechRecognizer_HypothesisGenerated(SpeechRecognizer sender, SpeechRecognitionHypothesisGeneratedEventArgs args)
+        {//según va entendiendo, ir mostrando la información en la UI
+            string hypothesis = args.Hypothesis.Text;
+
+            // Update the textbox with the currently confirmed text, and the hypothesis combined.
+            string textboxContent = szTextoDictado.ToString() + " " + hypothesis + " ...";
+            await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                tbTextoReconocido.Text = textboxContent;                
+            });
+        }
+
         private void Button_Click(object sender, RoutedEventArgs e)
         {   //TODO: lanzar el reconocimiento manualmente, una vez concluya el automático; A DESAPARECER
             reconocerContinuamente();
         }
 
-        private void BtnRecoLibre_Click(object sender, RoutedEvent e)
+        private void BtnRecoLibre_Click(object sender, RoutedEventArgs e)
         {
             if (bolTomandoNota == true)
             {
                 //ya viene de vuelta, y quiere parar el reconocimiento
+                //TODO
             }
             else
             {
+                limpiaFormulario();
                 TomaNota();
             }
         }
+
     }
 }
