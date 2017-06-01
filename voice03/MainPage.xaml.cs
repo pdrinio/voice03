@@ -59,13 +59,15 @@ namespace voice03
                 // lanza el habla 
                 inicializaHabla();
 
+                // por ahora no lo hago, para lanzar manualmente o el contínuo o el otro
                 //// y lanza el reconocimiento contínuo 
-                //Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;                
-                //await InitializeRecognizer(speechLanguage);
+                Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
+                await InitializeRecognizer(speechLanguage);
 
-                //reconocerContinuamente();
+                reconocerContinuamente();
 
-            } else
+            }
+            else
             {
                 tbEstadoReconocimiento.Visibility = Visibility.Visible;
                 tbEstadoReconocimiento.Text = "Sin acceso al micrófono";
