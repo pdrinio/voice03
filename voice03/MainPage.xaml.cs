@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Windows.Storage;
+using Windows.Storage;gnizeAsync
 using Windows.Media.SpeechRecognition;
 using Windows.UI.Core;
 using Windows.ApplicationModel;
@@ -57,14 +57,16 @@ namespace voice03
             if (tengoPermiso)
             {
                 // lanza el habla 
-                inicializaHabla();
+                inicializaHabla();        
+          
+                //escoge castellano (válido para todos los reconocedores)
+                Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
 
                 // por ahora no lo hago, para lanzar manualmente o el contínuo o el otro
                 //// y lanza el reconocimiento contínuo 
-                Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
-                await InitializeRecognizer(speechLanguage);
+                //await InitializeRecognizer(speechLanguage);
 
-                reconocerContinuamente();
+                //reconocerContinuamente();
 
             }
             else
@@ -316,15 +318,31 @@ namespace voice03
         {
             szTextoDictado = new StringBuilder();
             Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
-            try
+
+            bool tengoPermiso = await AudioCapturePermissions.RequestMicrophonePermission();
+            if (tengoPermiso)
             {
-                await InitializeTomaNota(speechLanguage);
+                // lanza el habla 
+                inicializaHabla();
+
+                try
+                {
+                    await InitializeTomaNota(speechLanguage);
+                }
+                catch (Exception exception)
+                {
+                    var messageDialog = new Windows.UI.Popups.MessageDialog(exception.Message, "Error inicializando Toma Nota");
+                    await messageDialog.ShowAsync();
+                }
+    
+
             }
-            catch (Exception exception)
+            else
             {
-                var messageDialog = new Windows.UI.Popups.MessageDialog(exception.Message, "Error inicializando Toma Nota");
-                await messageDialog.ShowAsync();
+                tbEstadoReconocimiento.Visibility = Visibility.Visible;
+                tbEstadoReconocimiento.Text = "Sin acceso al micrófono";
             }
+
            
         }
 
