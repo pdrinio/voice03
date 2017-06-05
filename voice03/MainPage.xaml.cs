@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Windows.Storage;gnizeAsync
+using Windows.Storage;
 using Windows.Media.SpeechRecognition;
 using Windows.UI.Core;
 using Windows.ApplicationModel;
@@ -35,6 +35,7 @@ namespace voice03
     {
         //mis objetillos
         private SpeechRecognizer speechRecognizer;
+        private SpeechRecognizer speechRecognizerNotas;
         private IAsyncOperation<SpeechRecognitionResult> recognitionOperation;
         private CoreDispatcher dispatcher;
         private SpeechSynthesizer synthesizer;
@@ -62,10 +63,11 @@ namespace voice03
                 //escoge castellano (válido para todos los reconocedores)
                 Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
 
-                // por ahora no lo hago, para lanzar manualmente o el contínuo o el otro
-                //// y lanza el reconocimiento contínuo 
+                // inicializo los dos reconocedores (el de gramática compilada, y el contínuo de las notas)                
                 //await InitializeRecognizer(speechLanguage);
+                await InitializeTomaNota(speechLanguage);
 
+                //// y lanza el reconocimiento contínuo (TODO: ahora no lo hago para probar el otro)
                 //reconocerContinuamente();
 
             }
@@ -129,26 +131,26 @@ namespace voice03
 
         private async Task InitializeTomaNota (Language recognizerLanguage)
         {
-            if (speechRecognizer != null)
+            if (speechRecognizerNotas != null)
             {
                 //si vengo de una ejecución anterior, hacemos limpieza
-                speechRecognizer.StateChanged -= SpeechRecognizer_StateChanged;
-                speechRecognizer.ContinuousRecognitionSession.Completed -= ContinuousRecognitionSession_Completed;
-                speechRecognizer.ContinuousRecognitionSession.ResultGenerated -= ContinuousRecognitionSession_ResultGenerated;
-                speechRecognizer.HypothesisGenerated -= SpeechRecognizer_HypothesisGenerated;
+                speechRecognizerNotas.StateChanged -= SpeechRecognizer_StateChanged;
+                speechRecognizerNotas.ContinuousRecognitionSession.Completed -= ContinuousRecognitionSession_Completed;
+                speechRecognizerNotas.ContinuousRecognitionSession.ResultGenerated -= ContinuousRecognitionSession_ResultGenerated;
+                speechRecognizerNotas.HypothesisGenerated -= SpeechRecognizer_HypothesisGenerated;
 
-                this.speechRecognizer.Dispose();
-                this.speechRecognizer = null;
+                this.speechRecognizerNotas.Dispose();
+                this.speechRecognizerNotas = null;
             }
 
-            this.speechRecognizer = new SpeechRecognizer(recognizerLanguage);
+            this.speechRecognizerNotas = new SpeechRecognizer(recognizerLanguage);
 
-            speechRecognizer.StateChanged += SpeechRecognizer_StateChanged; //feedback al usuario
+            speechRecognizerNotas.StateChanged += SpeechRecognizer_StateChanged; //feedback al usuario
 
             // en vez de gramática, aplicamos el caso de uso "Dictado"
             var dictationConstraint = new SpeechRecognitionTopicConstraint(SpeechRecognitionScenario.Dictation, "dictation");
-            speechRecognizer.Constraints.Add(dictationConstraint);
-            SpeechRecognitionCompilationResult result = await speechRecognizer.CompileConstraintsAsync();
+            speechRecognizerNotas.Constraints.Add(dictationConstraint);
+            SpeechRecognitionCompilationResult result = await speechRecognizerNotas.CompileConstraintsAsync();
             if (result.Status != SpeechRecognitionResultStatus.Success)
             {                
                 var messageDialog = new Windows.UI.Popups.MessageDialog(result.Status.ToString(), "Excepción chunga: ");
@@ -156,9 +158,9 @@ namespace voice03
             }
 
             // nos registramos a los eventos
-            speechRecognizer.ContinuousRecognitionSession.Completed += ContinuousRecognitionSession_Completed; //no hubo éxito
-            speechRecognizer.ContinuousRecognitionSession.ResultGenerated += ContinuousRecognitionSession_ResultGenerated; //o entendió, o llegó basura
-            speechRecognizer.HypothesisGenerated += SpeechRecognizer_HypothesisGenerated; //se va alimentando de lo que va llegando para dar feedback
+            speechRecognizerNotas.ContinuousRecognitionSession.Completed += ContinuousRecognitionSession_Completed; //no hubo éxito
+            speechRecognizerNotas.ContinuousRecognitionSession.ResultGenerated += ContinuousRecognitionSession_ResultGenerated; //o entendió, o llegó basura
+            speechRecognizerNotas.HypothesisGenerated += SpeechRecognizer_HypothesisGenerated; //se va alimentando de lo que va llegando para dar feedback
         }
 
         private async void SpeechRecognizer_StateChanged(SpeechRecognizer sender, SpeechRecognizerStateChangedEventArgs args)
@@ -179,7 +181,8 @@ namespace voice03
         public async void reconocerContinuamente()
         {
             try
-            {              
+            {            
+                
                 recognitionOperation = speechRecognizer.RecognizeAsync(); //y utilizamos éste, que no muestra el pop-up
                                                                         
                 speechRecognitionResult = await recognitionOperation;
@@ -316,33 +319,30 @@ namespace voice03
 
         private async void TomaNota()
         {
-            szTextoDictado = new StringBuilder();
-            Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
-
-            bool tengoPermiso = await AudioCapturePermissions.RequestMicrophonePermission();
-            if (tengoPermiso)
+           if (bolTomandoNota == false)
             {
-                // lanza el habla 
-                inicializaHabla();
+                if (speechRecognizerNotas.State == SpeechRecognizerState.Idle)
+                {                  
 
-                try
-                {
-                    await InitializeTomaNota(speechLanguage);
-                }
-                catch (Exception exception)
-                {
-                    var messageDialog = new Windows.UI.Popups.MessageDialog(exception.Message, "Error inicializando Toma Nota");
-                    await messageDialog.ShowAsync();
-                }
-    
+                    try
+                    {
+                        szTextoDictado = new StringBuilder();
+                        bolTomandoNota = true;
+                        await speechRecognizerNotas.ContinuousRecognitionSession.StartAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                       
+                        var messageDialog = new Windows.UI.Popups.MessageDialog(ex.Message, "Exception");
+                           await messageDialog.ShowAsync();                       
 
-            }
-            else
-            {
-                tbEstadoReconocimiento.Visibility = Visibility.Visible;
-                tbEstadoReconocimiento.Text = "Sin acceso al micrófono";
+                        bolTomandoNota = false;     
+
+                    }
+                }
             }
 
+           
            
         }
 
@@ -366,8 +366,8 @@ namespace voice03
                     {
                         this.tbEstadoReconocimiento.Text = "Reconocimiento exitoso";
                         this.tbxConsola.Text = args.Status.ToString();                        
-                        this.btnRecoLibre.Content = "Reconocimiento libre";
-                        bolTomandoNota = false;
+                        this.btnRecoLibre.Content = "Reconocimiento libre";                         
+                        bolTomandoNota = true;
                     });
                 }
             }
