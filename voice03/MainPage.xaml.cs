@@ -41,6 +41,9 @@ namespace voice03
         private SpeechSynthesizer synthesizer;
         private SpeechRecognitionResult speechRecognitionResult; 
         private Boolean bolTomandoNota; //para saber si está tomando nota
+        private enum SiguienteAccion { ReconocerContinuamente, TomarNota };
+        private SiguienteAccion nextStep;
+
         private StringBuilder szTextoDictado; //el texto que recoges
 
         public MainPage()
@@ -51,6 +54,8 @@ namespace voice03
         protected async override void OnNavigatedTo(NavigationEventArgs e) //cuando llegas
         {
             bolTomandoNota = false; //iniciamos sin el reconocedor continuo
+            nextStep = SiguienteAccion.ReconocerContinuamente; //y la siguiente acción es, precisamente, seguir así
+                
             dispatcher = CoreWindow.GetForCurrentThread().Dispatcher;
 
             //comprobación de si tengo permiso sobre el micrófono; si tengo, inicio el proceso (InitializeRecognizer)
@@ -155,8 +160,9 @@ namespace voice03
                 else
                 {
                     //si hubo éxito 
-                    tbEstadoReconocimiento.Visibility = Visibility.Visible;
-                    tbEstadoReconocimiento.Text = "Gramática compilada, reconociendo";                   
+                  //  tbEstadoReconocimiento.Visibility = Visibility.Visible;
+//                    tbEstadoReconocimiento.Text = "Gramática compilada, reconociendo";                   
+                        //me casca cada vez que vuelvo de tomar nota
 
                     speechRecognizer.Timeouts.EndSilenceTimeout = TimeSpan.FromSeconds(1.2);//damos tiempo a hablar
 
@@ -216,11 +222,26 @@ namespace voice03
         {
             try
             {
-                await speechRecognizer.StopRecognitionAsync();
-                speechRecognizer.StateChanged -= SpeechRecognizer_StateChanged;
+                if (speechRecognizer != null)
+                {
+                    if (speechRecognizer.State != SpeechRecognizerState.Idle)
+                    {
+                        if (recognitionOperation != null)
+                        {
+                            recognitionOperation.Cancel();
+                            recognitionOperation = null;
+                        }
+                    }
 
-                this.speechRecognizer.Dispose();
-                this.speechRecognizer = null;
+                    speechRecognizer.StateChanged -= SpeechRecognizer_StateChanged;
+
+                    this.speechRecognizer.Dispose();
+                    this.speechRecognizer = null;
+                }
+                else
+                {
+                    ParaDeReconocerContinuamente(); //lo intento hasta que salga del estado idle
+                }
             }
             catch (Exception)
             {
@@ -246,7 +267,7 @@ namespace voice03
             }        
         }
 
-        private async Task interpretaResultado(SpeechRecognitionResult recoResult)
+        private async  Task  interpretaResultado(SpeechRecognitionResult recoResult)
         {
             limpiaFormulario(); // limpiamos del formulario la intepretación anterior;
 
@@ -275,15 +296,20 @@ namespace voice03
                         await dime(RespondeALaComunicacion(recoResult.SemanticInterpretation.Properties["orden"][0].ToString()));
                     if (recoResult.SemanticInterpretation.Properties["orden"][0].ToString() == "TOMANOTA")
                     {
-                        ParaDeReconocerContinuamente();
-                        TomaNota();
+                        nextStep = SiguienteAccion.TomarNota; //pidió tomar nota: el siguiente paso será tomar nota, pues (ver más abajo en qué repercute)
                     }
-
                 }
 
-                // anulamos el objeto de resultado para que no vuelva a entrar en el bucle, e invocamos el reconocimiento de nuevo
-                recoResult = null;
-                reconocerContinuamente();
+                // si pidió tomar nota, salimos de aquí; en caso contrario, anulamos el objeto de resultado para que no vuelva a entrar en el bucle, e invocamos el reconocimiento de nuevo
+                if (nextStep == SiguienteAccion.ReconocerContinuamente)
+                {
+                    recoResult = null;
+                    reconocerContinuamente();
+                }
+                else {
+                    ParaDeReconocerContinuamente();                  
+                    TomaNota();
+                } //salir de aquí
             }
             else
             { //si no devuelve texto, probablemente hubiera un silencio; volvemos a invocar
@@ -400,8 +426,9 @@ namespace voice03
             //paramos el reconocimiento
             await speechRecognizerNotas.ContinuousRecognitionSession.StopAsync();
 
-            //lo detenemos
+            //y actualizamos el estado, y el siguiente paso
             bolTomandoNota = false;
+            nextStep = SiguienteAccion.ReconocerContinuamente;
 
             //eliminamos los objetos
             speechRecognizerNotas.StateChanged -= SpeechRecognizer_StateChanged;
