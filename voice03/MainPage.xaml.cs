@@ -41,7 +41,7 @@ namespace voice03
         private SpeechSynthesizer synthesizer;
         private SpeechRecognitionResult speechRecognitionResult; 
         private Boolean bolTomandoNota; //para saber si está tomando nota
-        private enum SiguienteAccion { ReconocerContinuamente, TomarNota };
+        private enum SiguienteAccion { Parado, ReconocerContinuamente, TomarNota };
         private SiguienteAccion nextStep;
 
         private StringBuilder szTextoDictado; //el texto que recoges
@@ -70,7 +70,7 @@ namespace voice03
 
                 // inicializo los dos reconocedores (el de gramática compilada, y el contínuo de las notas)                
                 await InitializeRecognizer(speechLanguage);
-                await InitializeTomaNota(speechLanguage);
+               await InitializeTomaNota(speechLanguage);
 
                 //// y lanza el reconocimiento contínuo (TODO: ahora no lo hago para probar el otro)
                reconocerContinuamente();
@@ -232,16 +232,16 @@ namespace voice03
                             recognitionOperation = null;
                         }
                     }
+                    else
+                    {
+                        //ParaDeReconocerContinuamente(); //lo intento hasta que salga del estado idle TIENE PINTA DE ESTAR MAL
+                    }
 
                     speechRecognizer.StateChanged -= SpeechRecognizer_StateChanged;
 
                     this.speechRecognizer.Dispose();
                     this.speechRecognizer = null;
-                }
-                else
-                {
-                    ParaDeReconocerContinuamente(); //lo intento hasta que salga del estado idle
-                }
+                }              
             }
             catch (Exception)
             {
@@ -286,6 +286,7 @@ namespace voice03
                     if (recoResult.SemanticInterpretation.Properties.ContainsKey("consulta"))
                     {
                         tbDiccionario.Text = recoResult.SemanticInterpretation.Properties["consulta"][0].ToString();
+                        
                         await dime(RespondeALaComunicacion(recoResult.SemanticInterpretation.Properties["consulta"][0].ToString()));
 
                         }
@@ -328,6 +329,8 @@ namespace voice03
                     return DateTime.Now.ToString("dd") + " de " + DateTime.Now.ToString("MMMM");
                 case "TOMANOTA":
                     return "Vamos a tomar nota";
+                case "BULTO":
+                    return "Vamos a crear un bulto";
                 default:
                     return "No sé gestionar tu mensaje";
             }
@@ -395,7 +398,7 @@ namespace voice03
                 }
                 else
                 {
-                    bolTomandoNota = false;
+                    bolTomandoNota = false; 
 
                     if (speechRecognizerNotas.State != SpeechRecognizerState.Idle)
                     {
@@ -439,13 +442,17 @@ namespace voice03
             this.speechRecognizerNotas.Dispose();
             this.speechRecognizerNotas = null;
 
+            /////////////////////////////////////////////////////////////////////////////////////////////
+            /* No ejecutamos por ahora este código, hasta saber si va a funcionar bien o no; lo dejamos
+             *  parado, para invocar con un nuevo botón
             //y volvemos a llamar al reconocimiento continuo, con su lenguaje, inicialización, ...
             //escoge castellano (válido para todos los reconocedores)
             Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
-
+            
             // inicializo los dos reconocedores (el de gramática compilada, y el contínuo de las notas)                
             await InitializeRecognizer(speechLanguage);
             reconocerContinuamente();
+            */////////////////////////////////////////////////////////////////////////////////////////////
         }
 
         private async void ContinuousRecognitionSession_Completed(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionCompletedEventArgs args)
@@ -542,17 +549,19 @@ namespace voice03
 
         } //limpia el formulario entre ejecuciones
 
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {   //TODO: lanzar el reconocimiento manualmente, una vez concluya el automático; A DESAPARECER
+        private async void  Button_Click(object sender, RoutedEventArgs e)
+        {
+            Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
+            await InitializeRecognizer(speechLanguage);
             reconocerContinuamente();
         }
 
-        private void BtnRecoLibre_Click(object sender, RoutedEventArgs e)
+        private void  BtnRecoLibre_Click(object sender, RoutedEventArgs e)
         {
             if (bolTomandoNota == true)
             {
-                //ya viene de vuelta, y quiere parar el reconocimiento
-                //TODO
+             //TODO
+
             }
             else
             {
@@ -560,6 +569,53 @@ namespace voice03
                 TomaNota();
             }
         }
-#endregion
+        #endregion
+
+
+        #region ControlesManualesTemporales
+        private void  BtnParaRecoContinuo(object sender, RoutedEventArgs e)
+        {
+            ParaDeReconocerContinuamente();
+
+            bolTomandoNota = false;
+            nextStep = SiguienteAccion.Parado;
+            this.tbEstadoReconocimiento.Text = "Reco continuo parado";
+        }
+
+        private void BtnParaTomaNota(object sender, RoutedEventArgs e)
+        {
+            ParaTomaNota();
+
+            bolTomandoNota = false;
+            nextStep = SiguienteAccion.Parado;
+            this.tbEstadoReconocimiento.Text = "Captura de nota parada";
+        }
+
+        private async void BtnLanzaRecoContinuo(object sender, RoutedEventArgs e)
+        {      
+            //inicializamos, y lanzamos el reconocimiento
+            Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
+            await InitializeRecognizer(speechLanguage);
+            reconocerContinuamente();
+
+            //actualizamos el estado          
+            nextStep = SiguienteAccion.ReconocerContinuamente;
+
+            this.tbEstadoReconocimiento.Text = "A reconocer continuamente";
+        }
+
+        private async void BtnLanzaTomaNota(object sender, RoutedEventArgs e)
+        {
+            //inicializamos, y lanzamos            
+            Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
+            await InitializeTomaNota(speechLanguage);
+            TomaNota();
+
+            //actualizamos el estado            
+            nextStep = SiguienteAccion.TomarNota;
+
+            this.tbEstadoReconocimiento.Text = "A tomar nota";
+        }
+        #endregion
     }
 }

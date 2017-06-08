@@ -19,6 +19,10 @@ xmlns="http://www.w3.org/2001/06/grammar">
         <ruleref uri="#tomaNota"></ruleref>
         <tag>out.orden = rules.latest();</tag>
       </item>
+          <item>
+        <ruleref uri="#creaBulto"></ruleref>
+        <tag>out.consulta=rules.latest();</tag>
+      </item>
     </one-of>
   </rule>
 
@@ -60,6 +64,17 @@ xmlns="http://www.w3.org/2001/06/grammar">
           <item>Nota nueva</item>
           <item>Crear nueva nota</item>
           <item>Crear nota nueva</item>
+        </one-of>
+      </item>
+    </one-of>
+  </rule>
+
+  <rule id="creaBulto">
+    <one-of>
+      <item>
+        <tag> out="BULTO"; </tag>
+        <one-of>
+          <item>Crear bulto</item>          
         </one-of>
       </item>
     </one-of>
