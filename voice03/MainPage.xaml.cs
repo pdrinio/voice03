@@ -70,7 +70,7 @@ namespace voice03
 
                 // inicializo los dos reconocedores (el de gramática compilada, y el contínuo de las notas)                
                 await InitializeRecognizer(speechLanguage);
-               await InitializeTomaNota(speechLanguage);
+              await InitializeTomaNota(speechLanguage);
 
                 //// y lanza el reconocimiento contínuo (TODO: ahora no lo hago para probar el otro)
                reconocerContinuamente();
@@ -426,33 +426,43 @@ namespace voice03
 
         private async void ParaTomaNota()
         {
-            //paramos el reconocimiento
-            await speechRecognizerNotas.ContinuousRecognitionSession.StopAsync();
+            if (this.speechRecognizerNotas != null)
+            {
+                if (this.speechRecognizerNotas.State != SpeechRecognizerState.Idle)
+                {
+                    await speechRecognizerNotas.ContinuousRecognitionSession.StopAsync();
 
-            //y actualizamos el estado, y el siguiente paso
-            bolTomandoNota = false;
-            nextStep = SiguienteAccion.ReconocerContinuamente;
+                    //paramos el reconocimiento
+                    //await speechRecognizerNotas.ContinuousRecognitionSession.CancelAsync();
 
-            //eliminamos los objetos
-            speechRecognizerNotas.StateChanged -= SpeechRecognizer_StateChanged;
-            speechRecognizerNotas.ContinuousRecognitionSession.Completed -= ContinuousRecognitionSession_Completed;
-            speechRecognizerNotas.ContinuousRecognitionSession.ResultGenerated -= ContinuousRecognitionSession_ResultGenerated;
-            speechRecognizerNotas.HypothesisGenerated -= SpeechRecognizer_HypothesisGenerated;
+                    //y actualizamos el estado, y el siguiente paso
+                    bolTomandoNota = false;
+                    nextStep = SiguienteAccion.ReconocerContinuamente;
 
-            this.speechRecognizerNotas.Dispose();
-            this.speechRecognizerNotas = null;
+                    //eliminamos los objetos
+                    speechRecognizerNotas.StateChanged -= SpeechRecognizer_StateChanged;
+                    speechRecognizerNotas.ContinuousRecognitionSession.Completed -= ContinuousRecognitionSession_Completed;
+                    speechRecognizerNotas.ContinuousRecognitionSession.ResultGenerated -= ContinuousRecognitionSession_ResultGenerated;
+                    speechRecognizerNotas.HypothesisGenerated -= SpeechRecognizer_HypothesisGenerated;
 
-            /////////////////////////////////////////////////////////////////////////////////////////////
-            /* No ejecutamos por ahora este código, hasta saber si va a funcionar bien o no; lo dejamos
-             *  parado, para invocar con un nuevo botón
-            //y volvemos a llamar al reconocimiento continuo, con su lenguaje, inicialización, ...
-            //escoge castellano (válido para todos los reconocedores)
-            Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
-            
-            // inicializo los dos reconocedores (el de gramática compilada, y el contínuo de las notas)                
-            await InitializeRecognizer(speechLanguage);
-            reconocerContinuamente();
-            */////////////////////////////////////////////////////////////////////////////////////////////
+                    this.speechRecognizerNotas.Dispose();
+                    this.speechRecognizerNotas = null;
+
+                    /////////////////////////////////////////////////////////////////////////////////////////////
+                    /* No ejecutamos por ahora este código, hasta saber si va a funcionar bien o no; lo dejamos
+                     *  parado, para invocar con un nuevo botón
+                    //y volvemos a llamar al reconocimiento continuo, con su lenguaje, inicialización, ...
+                    //escoge castellano (válido para todos los reconocedores)
+                    Language speechLanguage = SpeechRecognizer.SystemSpeechLanguage;
+
+                    // inicializo los dos reconocedores (el de gramática compilada, y el contínuo de las notas)                
+                    await InitializeRecognizer(speechLanguage);
+                    reconocerContinuamente();
+                    */////////////////////////////////////////////////////////////////////////////////////////////
+                }
+
+            }
+
         }
 
         private async void ContinuousRecognitionSession_Completed(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionCompletedEventArgs args)
