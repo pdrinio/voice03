@@ -40,9 +40,11 @@ namespace voice03
         private CoreDispatcher dispatcher;
         private SpeechSynthesizer synthesizer;
         private SpeechRecognitionResult speechRecognitionResult; 
-        private Boolean bolTomandoNota; //para saber si está tomando nota
+        private Boolean bolTomandoNota; //para saber si está tomando nota  //TODO: A DEPRECAR
+        private enum Estado { Parado, ReconociendoContinuamente, TomandoNota};
         private enum SiguienteAccion { Parado, ReconocerContinuamente, TomarNota };
-        private SiguienteAccion nextStep;
+        private Estado miEstado;
+        private SiguienteAccion nextStep; 
 
         private StringBuilder szTextoDictado; //el texto que recoges
 
@@ -53,8 +55,9 @@ namespace voice03
 
         protected async override void OnNavigatedTo(NavigationEventArgs e) //cuando llegas
         {
-            bolTomandoNota = false; //iniciamos sin el reconocedor continuo
-            nextStep = SiguienteAccion.ReconocerContinuamente; //y la siguiente acción es, precisamente, seguir así
+            bolTomandoNota = false; //iniciamos sin el reconocedor continuo  //TODO: A DEPRECAR
+            
+            miEstado = Estado.Parado; //iniciamos parados
                 
             dispatcher = CoreWindow.GetForCurrentThread().Dispatcher;
 
@@ -72,8 +75,8 @@ namespace voice03
                 await InitializeRecognizer(speechLanguage);
               await InitializeTomaNota(speechLanguage);
 
-                //// y lanza el reconocimiento contínuo
-               reconocerContinuamente();
+                //// y lanza EL TOMA NOTA, para saber cuándo me hace la llamada
+               TomaNota();
 
             }
             else
@@ -379,7 +382,8 @@ namespace voice03
 
         private async void TomaNota()
         {
-           if (bolTomandoNota == false)
+            //if (bolTomandoNota == false)
+            if (miEstado != Estado.TomandoNota)
             {
                 if (speechRecognizerNotas.State == SpeechRecognizerState.Idle)
                 {                  
@@ -387,22 +391,25 @@ namespace voice03
                     try
                     {
                         szTextoDictado = new StringBuilder();
-                        bolTomandoNota = true;
+                        //bolTomandoNota = true;
+                        miEstado = Estado.TomandoNota;
                         await speechRecognizerNotas.ContinuousRecognitionSession.StartAsync();
                     }
                     catch (Exception ex)
                     {
                        
                         var messageDialog = new Windows.UI.Popups.MessageDialog(ex.Message, "Exception");
-                           await messageDialog.ShowAsync();                       
+                           await messageDialog.ShowAsync();
 
-                        bolTomandoNota = false;     
+                        //bolTomandoNota = false;     
+                        miEstado = Estado.Parado;
 
                     }
                 }
                 else
                 {
-                    bolTomandoNota = false; 
+                    // bolTomandoNota = false; 
+                    miEstado = Estado.Parado;
 
                     if (speechRecognizerNotas.State != SpeechRecognizerState.Idle)
                     {
@@ -423,9 +430,6 @@ namespace voice03
                 }
 
             }
-
-
-
         }
 
         private async void ParaTomaNota()
@@ -440,7 +444,8 @@ namespace voice03
                     //await speechRecognizerNotas.ContinuousRecognitionSession.CancelAsync();
 
                     //y actualizamos el estado, y el siguiente paso
-                    bolTomandoNota = false;
+                    //  bolTomandoNota = false;
+                    miEstado = Estado.Parado;
                     nextStep = SiguienteAccion.ReconocerContinuamente;
 
                     //eliminamos los objetos
@@ -484,7 +489,8 @@ namespace voice03
                     {
                         this.tbEstadoReconocimiento.Text = "Te has pasado de tiempo";                        
                         this.btnRecoLibre.Content = "Reconocimiento libre";
-                        bolTomandoNota = false;
+                        // bolTomandoNota = false;
+                        miEstado = Estado.Parado;
                     });
                 }
                 else
@@ -493,8 +499,9 @@ namespace voice03
                     {
                         this.tbEstadoReconocimiento.Text = "Reconocimiento exitoso";
                         this.tbxConsola.Text = args.Status.ToString();                        
-                        this.btnRecoLibre.Content = "Reconocimiento libre";                         
-                        bolTomandoNota = true;
+                        this.btnRecoLibre.Content = "Reconocimiento libre";
+                        //bolTomandoNota = true;
+                        miEstado = Estado.TomandoNota;
                         
                     });
                 }
@@ -517,7 +524,8 @@ namespace voice03
 
                 if (szTextoDictado.ToString().Contains("Final nota"))
                 {
-                    bolTomandoNota = false;
+                    //bolTomandoNota = false;
+                    miEstado = Estado.Parado;
                     limpiaFormulario();
                     ParaTomaNota();
                 }
