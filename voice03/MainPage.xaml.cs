@@ -72,7 +72,7 @@ namespace voice03
                 await InitializeRecognizer(speechLanguage);
               await InitializeTomaNota(speechLanguage);
 
-                //// y lanza el reconocimiento contínuo (TODO: ahora no lo hago para probar el otro)
+                //// y lanza el reconocimiento contínuo
                reconocerContinuamente();
 
             }
@@ -230,6 +230,10 @@ namespace voice03
                         {
                             recognitionOperation.Cancel();
                             recognitionOperation = null;
+
+                            bolTomandoNota = false;
+                            nextStep = SiguienteAccion.Parado;
+                            this.tbEstadoReconocimiento.Text = "Reco continuo parado";
                         }
                     }
                     else
@@ -447,6 +451,10 @@ namespace voice03
 
                     this.speechRecognizerNotas.Dispose();
                     this.speechRecognizerNotas = null;
+
+                    bolTomandoNota = false;
+                    nextStep = SiguienteAccion.Parado;
+                    this.tbEstadoReconocimiento.Text = "Captura de nota parada";
 
                     /////////////////////////////////////////////////////////////////////////////////////////////
                     /* No ejecutamos por ahora este código, hasta saber si va a funcionar bien o no; lo dejamos
